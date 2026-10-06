@@ -1,0 +1,8 @@
+numpy
+matplotlib
+jax[cpu]
+pandas
+scipy
+ipython
+streamlit
+plotly
