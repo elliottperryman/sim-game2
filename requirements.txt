@@ -6,3 +6,5 @@ scipy
 ipython
 streamlit
 plotly
+watchdog
+
