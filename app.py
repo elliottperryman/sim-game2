@@ -126,19 +126,15 @@ def reveal(indices, prob):
     """Draw Poisson counts for every not-yet-revealed index."""
     revealed = st.session_state.revealed
     new = [i for i in dict.fromkeys(indices) if i not in revealed]
-    if not new or st.session_state.answer_shown:
-        return False
-    amp, bg = amp_bg(*st.session_state.setup[2:])
-    counts = st.session_state.rng.poisson(amp * prob["shape"][new] + bg)
-    revealed.update(zip(new, counts.tolist()))
-    st.session_state.chart_key += 1
-    return True
+    if new and not st.session_state.answer_shown:
+        amp, bg = amp_bg(*st.session_state.setup[2:])
+        counts = st.session_state.rng.poisson(amp * prob["shape"][new] + bg)
+        revealed.update(zip(new, counts.tolist()))
+    st.session_state.chart_key += 1  # clear the box even if it caught nothing, else it sticks with every point dimmed
 
 
 def selected_indices(chart_state):
     """Location indices of the points inside a box selection."""
-    if not chart_state:
-        return []
     out = []
     for point in chart_state["selection"]["points"]:
         idx = point.get("customdata")
@@ -210,7 +206,9 @@ playable = playable_pixels(problem, *thinning)
 
 # Apply the box selection from the previous run *before* drawing, so a reveal
 # costs one rerun instead of two.
-reveal(selected_indices(st.session_state.get(f"meas_{st.session_state.chart_key}")), prob)
+chart_state = st.session_state.get(f"meas_{st.session_state.chart_key}")
+if chart_state and chart_state["selection"]["box"]:
+    reveal(selected_indices(chart_state), prob)
 
 # ----------------------------------------------------------------------------
 # Main area
@@ -270,7 +268,7 @@ def base_layout(fig, title):
         height=620,
         margin=dict(l=70, r=20, t=50, b=60),
         plot_bgcolor="black",
-        dragmode="select",
+        dragmode=False if st.session_state.answer_shown else "select",  # boxes do nothing once revealed
         # "d" keeps every drag a true box; plotly otherwise turns a nearly flat
         # drag into a selection of the whole row or column.
         selectdirection="d",
